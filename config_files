@@ -1,0 +1,46 @@
+#!/bin/bash
+
+git clone https://gitlab.com/cit2420/2420-as2-starting-files.git
+
+# ~/bin/sayhi -> ~/2420-as2-starting-files/bin/sayhi
+
+startup=/home/$USER/startup/files
+
+# Change name using mv to make it easier to read
+if [[ -d $startup ]]; then
+  mv /home/$USER/2420-as2-starting-files $startup
+fi
+
+# Checks if directory exists and makes it if it doesn't
+make_directory() {
+  if [[ ! -d $1 ]]; then
+    mkdir $1
+  fi
+}
+
+# Makes symbolic links to each individual file inisde the given directroy. If it is a directory inside, it recursively checks inside of it by calling the same function again
+recursive_sym_link () {
+  local DIR=$1
+  local DES=$2
+
+  for file in $DIR/*; do
+    if [[ -d $file ]]; then
+      recursive_sym_link file $DES
+    fi
+    BASE=$(basename $file)
+    # ln -s $file "${DES}/${BASE}"
+    echo "${DES}/${BASE} -> $file Created"
+  done
+}
+
+make_directory /home/$USER/bin
+
+make_directory /home/$USER/.config
+
+make_directory /home/$USER/.bashrc
+
+recursive_sym_link $startup/bin /home/$USER/bin
+
+recursive_sym_link $startup/config /home/$USER/.config
+
+# ln -s /home/$USER/.bashrc $startup/home/bashrc

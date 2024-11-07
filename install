@@ -1,0 +1,5 @@
+#!/bin/bash
+
+packages=$(cat /home/$USER/assignment2/packages.txt)
+echo $packages
+pacman -S $packages

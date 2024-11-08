@@ -9,12 +9,12 @@ while getopts "pc" opt; do
         exit 1
       fi
       echo "These are the packages that are to be downloaded: 
-$(cat /home/$og_user/packages.txt)
+$(cat /home/$og_user/project1/packages.txt)
 
 [Y/N] to proceed:"
       read input
       if [[ $input == "y" || $input == "Y" ]]; then
-        ./install
+        ./install $og_user
       else
         echo "
 Open the packages.txt file and add any other packages that you wish to download"
@@ -22,7 +22,7 @@ Open the packages.txt file and add any other packages that you wish to download"
       fi
       ;;
     c) 
-      ./config_files
+      ./config_files $og_user
       ;;
     "?")
       echo "Use the option -p for installing the packages or -c for installing the configuration files with symbolic links"
@@ -30,8 +30,9 @@ Open the packages.txt file and add any other packages that you wish to download"
       ;;
   esac
 done 
-echo $OPTIND
+
 if [[ $OPTIND -eq 1 ]]; then
   echo  "Use the option -p for installing the packages or -c for installing the configuration files with symbolic links"
   exit 1
+fit 1
 fi

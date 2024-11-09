@@ -1,0 +1,65 @@
+#!/bin/bash
+
+git clone https://gitlab.com/cit2420/2420-as2-starting-files.git
+
+# ~/bin/sayhi -> ~/2420-as2-starting-files/bin/sayhi
+
+startup=/home/$1/project1/startup
+
+# Change name using mv to make it easier to read
+if [[ -d "/home/$1/project1/2420-as2-starting-files" ]]; then
+  mv /home/$1/project1/2420-as2-starting-files $startup
+  rm -rf $startup/2420-as2-starting-files
+fi
+
+# Checks if directory exists and makes it if it doesn't
+make_directory() {
+  if [[ ! -d $1 ]]; then
+    mkdir $1
+    echo "Successfully created directory $1"
+  fi
+}
+
+# Makes symbolic links to each individual file inisde the given directroy. If it is a directory inside, it recursively checks inside of it by calling the same function again
+recursive_sym_link () {
+  local DIR=$1
+  local DES=$2
+
+  for file in $DIR/*; do
+    if [[ -d $file ]]; then
+      recursive_sym_link $file $DES
+    else
+      BASE=$(basename $file)
+      if [[ ! -f "${DES}/${BASE}" ]]; then
+      	ln -s $file "${DES}/${BASE}"
+      	echo "${DES}/${BASE} -> $file Created"
+      else
+	echo "${DES}/${BASE} already exists"
+      fi
+    fi
+  done
+}
+
+make_directory /home/$1/bin
+
+make_directory /home/$1/.config
+
+echo "
+Symbolic links for /home/$1/bin:"
+recursive_sym_link $startup/bin /home/$1/bin
+
+echo "
+Symbolic links for /home/$1/.config:"
+recursive_sym_link $startup/config /home/$1/.config
+
+echo "
+Symbolc link for /home/$1/.bashrc:"
+if [[ ! -L $startup/home/bashrc ]]; then
+   rm /home/$1/.bashrc
+   cp $startup/home/bashrc /home/$1/.bashrc
+   rm $startup/home/bashrc
+   ln -s /home/$1/.bashrc $startup/home/bashrc
+   echo "$startup/home/bashrc -> /home/$1/.bashrc Created"
+else
+   echo "$startup/home/bashrc is already a Symbolic Link"
+fi

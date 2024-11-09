@@ -1,5 +1,0 @@
-#!/bin/bash
-
-packages=$(cat /home/$1/project1/packages.txt)
-echo $packages
-pacman -S $packages

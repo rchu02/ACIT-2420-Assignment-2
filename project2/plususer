@@ -1,0 +1,27 @@
+#!/bin/bash
+
+copy_skel_to_home () {
+
+}
+
+while getopts ":s:h:cg:" opt; do
+   case "${opt}" in
+      s) 
+        shell=${OPTARG}
+        ;;
+      h)
+        home=${OPTARG}
+        ;;
+      c)
+        copy_skel_to_home
+        ;;
+      g)
+        groups=${OPTARG}
+        ;;
+      :)
+        echo "Error: -${OPTARG} requires an argument"
+        exit 1
+        ;;
+      ?)
+        echo "Please use the options of -s: For the specified shell, -h: For the home directory of the user, -c: Copying the /etc/skel directory into the home directory, -g: Additional groups that the user wants to be added to."
+        exit 1

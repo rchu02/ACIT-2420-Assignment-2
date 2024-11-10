@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# Set the packages variable with the packages.txt data, mainly the packages that need to be installed, using the command cat [1], which prints the entire file out, with the path of /home/$1/... $1 in th# is case will be what the first input of when calling the script (will be the user) [2]. All of this is wrapped around a $() which is a command subsitution which allows bash the output to replace the 
+# command itself. [2]
 packages=$(cat /home/$1/project1/packages.txt)
-echo $packages
+# Will call pacman which is the package manager for Arch with the option -S which is to Sync. Then it calls the packages variable with the $packages. [4]
 pacman -S $packages
+
+# References:
+# [1] https://man7.org/linux/man-pages/man1/cat.1.html 
+# [2] https://bash.cyberciti.biz/guide/$1
+# [3] https://www.gnu.org/software/bash/manual/html_node/Command-Substitution.html
+# [4] https://wiki.archlinux.org/title/Pacman

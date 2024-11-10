@@ -108,4 +108,20 @@ chown -R $user:$user $home
 chmod -R go=u, go-w $home
 chmod go= $home
 
+if [[ ! -z $groups ]]; then
+  for g in $groups; do
+    column=$(cat /etc/group | grep -n "$g:")
+    c_no=${column%%:*}
+    if [[ ! -z $c_no ]]; then 
+	if [[ ! -z "${column##*:}" ]]
+    	    sed -i.bak "/${c_no}:/s/$/$user" /etc/group
+	else 
+	    sed -i.bak "/${c_no}:/s/$/,$user" /etc/group
+	fi
+    else
+	echo "Group $g not found"
+    fi
+  done
+fi
+
 passwd $user

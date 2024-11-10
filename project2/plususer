@@ -9,6 +9,7 @@ The following options are:
 	-d <home>: Will create a home directory for user.
 	-g "<groups>": Will put users in given groups, put the groups in "" separated by a space, 
 	e.g, -g "g1 g2 g3".
+	-c "<comment>": Will add the users comment or description for the user.
 	-h: Help page.'
 	exit 0
 	;;
@@ -28,16 +29,20 @@ user=$1
 shell=/bin/bash
 home=/home/$user
 groups=""
+comment=""
 
 shift
 
-while getopts ":s:d:g:h" opt; do
+while getopts ":s:d:g:c:h" opt; do
    case "${opt}" in
       s)
         shell=${OPTARG}
 	;;
       d)
 	home=${OPTARG}
+	;;
+      c)
+	comment=${OPTARG}
 	;;
       g)
         groups=${OPTARG}
@@ -49,6 +54,7 @@ The following options are:
 	-d <home>: Will create a home directory for user.
 	-g "<groups>": Will put users in given groups, put the groups in "" separated by a space, 
 	e.g, -g "g1 g2 g3".
+	-c "<comment>": Will add the users comment or description for the user.
 	-h: Help page.'
 	exit 0
 	;;
@@ -75,7 +81,7 @@ gid=1001
 cont=true
 
 while $cont; do
-  match=$(cat /etc/passwd | grep -w $uid)
+  match=$(grep -w "^${uid}" /etc/passwd)
   if [[ -z $match && $uid -ne 65534 ]]; then
      cont=false
   else
@@ -86,7 +92,7 @@ done
 cont=true
 
 while $cont; do
-  match=$(cat /etc/group | grep -w $gid)
+  match=$(grep -w $gid /etc/group)
   if [[ -z $match && $gid -ne 65534 ]]; then
      cont=false
   else
@@ -95,7 +101,7 @@ while $cont; do
 done
 
 cat >> /etc/passwd <<- EOF
-$user:*:$uid:$uid::$home:$shell
+$user:*:$uid:$uid:$comment:$home:$shell
 EOF
 
 cat >> /etc/group <<- EOF
@@ -112,7 +118,7 @@ done
 shopt -u dotglob
 
 chown -R $user:$user $home
-chmod -R go=u, go-w $home
+chmod -R go=u,go-w $home
 chmod go= $home
 
 if [[ ! -z $groups ]]; then

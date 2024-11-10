@@ -63,15 +63,27 @@ if [[ ! -z $user_match ]]; then
   exit 1
 fi
 
-uid=1000
+uid=1001
+gid=1001
 cont=true
 
 while $cont; do
   match=$(cat /etc/passwd | grep -w $uid)
-  if [[ -z $match || $uid -ne 65534 ]]; then
+  if [[ -z $match && $uid -ne 65534 ]]; then
      cont=false
   else
      ((uid++))
+  fi
+done
+
+cont=true
+
+while $cont; do
+  match=$(cat /etc/group | grep -w $gid)
+  if [[ -z $match && $gid -ne 65534 ]]; then
+     cont=false
+  else
+     ((gid++))
   fi
 done
 

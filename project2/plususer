@@ -1,22 +1,20 @@
 #!/bin/bash
 
-copy_skel_to_home () {
+user=$1
+shell=/bin/bash
+home=/home/$user
 
-}
+shift
 
-while getopts ":s:h:cg:" opt; do
+while getopts ":s:g:" opt; do
    case "${opt}" in
-      s) 
+      s)
         shell=${OPTARG}
-        ;;
-      h)
-        home=${OPTARG}
-        ;;
-      c)
-        copy_skel_to_home
+        echo $shell
         ;;
       g)
         groups=${OPTARG}
+        echo $groups
         ;;
       :)
         echo "Error: -${OPTARG} requires an argument"
@@ -25,3 +23,29 @@ while getopts ":s:h:cg:" opt; do
       ?)
         echo "Please use the options of -s: For the specified shell, -h: For the home directory of the user, -c: Copying the /etc/skel directory into the home directory, -g: Additional groups that the user wants to be added to."
         exit 1
+        ;;
+    esac
+done
+
+user_match=$(cat /etc/passwd | grep -w $user)
+
+if [[ ! -z $user_match ]]; then
+  echo "Username is already taken, please choose a different name"
+  exit 1
+fi
+
+uid=1000
+cont=true
+
+while $cont; do
+  match=$(cat /etc/passwd | grep -w $uid)
+  if [[ -z $match || $uid -ne 65534 ]]; then
+     cont=false
+  else
+     ((uid++))
+  fi
+done
+
+cat >> /etc/passwd <<- EOF
+$user:*:$uid:$uid::$home:$shell
+EOF

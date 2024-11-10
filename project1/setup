@@ -1,38 +1,68 @@
 #!/bin/bash
 
+# First we set the variable og_user as the original user that ran sudo, as the the use of downloading packages with pacman requires using
+# sudo. [15] It implements awk and the who am i command. The who am i will check who is logged on and the am i will check is an alias for -m
+# which is an option for finding only the hostname and user associated with the original input (stdin). [16] The awk with the pipe command of
+# | [18] will take the who am i output and only take the first column with {print $1} mainly the original user that entered sudo. [3] [17]
 og_user=$(who am i | awk '{print $1}')
+# We now use getopts to check for user options, it will mainly cover -p and -c only with no OPTARG as these will mainly just call the 
+# scripts. [19]
 while getopts "pc" opt; do
   case "${opt}" in 
     p)
+      # The -p option will first check if the user is running in sudo, this is by getting the id of the user with the command $(id -u) [20],
+      # and then checking if it is not equal to 0 with -ne, since root has UID = 0. [21]
       if [[ $(id -u ) -ne 0 ]]; then
+        # If the user is not running as root, then a message will tell them to run as it and use exit 1 so that the script can leave
+        # as a general error. [22]
         echo "Run as Sudo User"
         exit 1
       fi
+      # This part will confirm what the packages the user will be downloading using command substituion of the cat command for the path
+      # /home/user/project1/packages.txt. [1] [3]
       echo "These are the packages that are to be downloaded: 
 $(cat /home/$og_user/project1/packages.txt)
 
 [Y/N] to proceed:"
+      # This will store the input of the user in a variable called input using the command read. [23]
       read input
+      # Now we check if the input is either y or Y so that we can call the script of install with the input of the user. [4]
       if [[ $input == "y" || $input == "Y" ]]; then
         ./install $og_user
       else
+        # If the input isn't y or Y then we let the user know and exits the script. [22]
         echo "
 Open the packages.txt file and add any other packages that you wish to download"
         exit 1
       fi
       ;;
     c) 
+      # The -c option will just call the config_file script with the input of the user.
       ./config_files $og_user
       ;;
     "?")
+      # This part is if the user inputted anything other than -p or -c and will let the user know how to use the options, then exits. [22]
       echo "Use the option -p for installing the packages or -c for installing the configuration files with symbolic links"
       exit 1
       ;;
   esac
 done 
 
+# This will check if the OPTIND is equal to 1, mainly so that if the user did not use any of the options of -p or -c and then exits.
+# OPTIND will always default to 1 if there are no options so we can use -eq to check. [22] [24]
 if [[ $OPTIND -eq 1 ]]; then
   echo  "Use the option -p for installing the packages or -c for installing the configuration files with symbolic links"
   exit 1
-fit 1
 fi
+
+# References:
+# [15] https://stackoverflow.com/questions/4598001/how-do-you-find-the-original-user-through-multiple-sudo-and-su-commands
+# [16] https://man7.org/linux/man-pages/man1/who.1.html
+# [17] https://www.gnu.org/software/gawk/manual/html_node/Print-Examples.html
+# [18] https://www.redhat.com/en/blog/pipes-command-line-linux#:~:text=One%20of%20the%20most%20powerful,it%20as%20input%20for%20another.
+# [19] https://kodekloud.com/blog/bash-getopts/
+# [20] https://man7.org/linux/man-pages/man1/id.1.html
+# [21] https://www.ibm.com/docs/sv/aix/7.1?topic=passwords-root-account
+# [22] https://www.unix.com/programming/38357-exit-0-versus-exit-1-a.html
+# [23] https://linuxcommand.org/lc3_man_pages/readh.html
+# [24] https://linux.die.net/man/3/optind#:~:text=The%20variable%20optind%20is%20the,scanning%20a%20new%20argument%20vector.

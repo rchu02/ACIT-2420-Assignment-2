@@ -3,12 +3,13 @@
 while getopts ":h" opt; do
    case "${opt}" in
       h)
-	echo "For creating a user, use this script, as ./plususer <username>. This will create a user and group with the following username, if no options are given, a default home directory and shell will be made. The default home directory is /home/<username> and default shell is /bin/bash.
+	echo 'For creating a user, use this script, as ./plususer <username>. This will create a user and group with the following username, if no options are given, a default home directory and shell will be made. The default home directory is /home/<username> and default shell is /bin/bash.
 The following options are:
 	-s <shell>: Will create a shell for user.
 	-d <home>: Will create a home directory for user.
-	-g <groups>: Will put users in given groups.
-	-h: Help page."
+	-g "<groups>": Will put users in given groups, put the groups in "" separated by a space, 
+	e.g, -g "g1 g2 g3".
+	-h: Help page.'
 	exit 0
 	;;
       ?)
@@ -18,9 +19,15 @@ The following options are:
     esac
 done
 
+if [[ $(id -u ) -ne 0 ]]; then
+   echo "Run as Sudo User"
+   exit 1
+fi
+
 user=$1
 shell=/bin/bash
 home=/home/$user
+groups=""
 
 shift
 
@@ -34,15 +41,15 @@ while getopts ":s:d:g:h" opt; do
 	;;
       g)
         groups=${OPTARG}
-        echo $groups
-        ;;
+	;;
       h)
-        echo "For creating a user, use this script, as ./plususer <username>. This will create a user and group with the following username, if no options are given, a default home directory and shell will be made. The default home directory is /home/<username> and default shell is /bin/bash.
+        echo 'For creating a user, use this script, as ./plususer <username>. This will create a user and group with the following username, if no options are given, a default home directory and shell will be made. The default home directory is /home/<username> and default shell is /bin/bash.
 The following options are:
 	-s <shell>: Will create a shell for user.
 	-d <home>: Will create a home directory for user.
-	-g <groups>: Will put users in given groups.
-	-h: Help page."
+	-g "<groups>": Will put users in given groups, put the groups in "" separated by a space, 
+	e.g, -g "g1 g2 g3".
+	-h: Help page.'
 	exit 0
 	;;
       :)
@@ -110,16 +117,18 @@ chmod go= $home
 
 if [[ ! -z $groups ]]; then
   for g in $groups; do
-    column=$(cat /etc/group | grep -n "$g:")
+    column=$(grep -nw "^${g}" /etc/group)
     c_no=${column%%:*}
     if [[ ! -z $c_no ]]; then 
-	if [[ ! -z "${column##*:}" ]]
-    	    sed -i.bak "/${c_no}:/s/$/$user" /etc/group
-	else 
-	    sed -i.bak "/${c_no}:/s/$/,$user" /etc/group
+	    group_line=$(grep "^${g}:" /etc/group)
+	if [[ "${group_line}" == *":" ]]; then
+    	    sed -i.bak "${c_no}s/$/${user}/" /etc/group
+    	else 
+	    sed -i.bak "${c_no}s/$/,${user}/" /etc/group
 	fi
+	echo "User was added to group $g"
     else
-	echo "Group $g not found"
+	echo "Group $g was not found"
     fi
   done
 fi

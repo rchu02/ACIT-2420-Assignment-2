@@ -1,65 +1,108 @@
 #!/bin/bash
 
+# Will clone the repository into a new directory called 2420-as2-starting-files [3]
 git clone https://gitlab.com/cit2420/2420-as2-starting-files.git
 
-# ~/bin/sayhi -> ~/2420-as2-starting-files/bin/sayhi
-
+# Set the startup variable as a more readable path instead of 2420-as2-starting file. [2] [3]
 startup=/home/$1/project1/startup
 
 # Change name using mv to make it easier to read
+# First it checks if the the git clone directory is a directory using -d in a if statement. [4]
 if [[ -d "/home/$1/project1/2420-as2-starting-files" ]]; then
-  mv /home/$1/project1/2420-as2-starting-files $startup
+  # If the path is a directory then we start by moving the contents using mv [5] to the more readable directory path.
+  mv /home/$1/project1/2420-as2-starting-files $startup 
+  # Now we use rm -rf to forecfully and recursively remove the files from the original directory if it still exists. [6]
   rm -rf $startup/2420-as2-starting-files
 fi
 
-# Checks if directory exists and makes it if it doesn't
+# Make a funciton called make_directory for convenince purposes since we use it more than once. [7]
 make_directory() {
+  # Makes an if statement that checks if the given input for $1 from calling the function doesn't yet exist as a directory. [7]
   if [[ ! -d $1 ]]; then
+    # Now we use mkdir to make the directory in that path. [8]
     mkdir $1
     echo "Successfully created directory $1"
   fi
 }
 
-# Makes symbolic links to each individual file inisde the given directroy. If it is a directory inside, it recursively checks inside of it by calling the same function again
+# Make symbolic link function where the symbolic link is made to each individual file inside the given directroy. 
+# If it is a directory inside, it recursively checks inside of it by calling the same function again. [7] [9]
 recursive_sym_link () {
+  # Set the local variables as DIR and DES for convenince. [2] [10]
   local DIR=$1
   local DES=$2
 
+  # Use a for loop so that it goes through every file/directory in the directory that was given from the function. [9]
   for file in $DIR/*; do
+    # Now we check if the given file/directory is a directory and we use recursion to call recursive_sym_link again if it is a directory. [4]     # [9]
     if [[ -d $file ]]; then
       recursive_sym_link $file $DES
     else
+      # The only other case is if it is a file so we can just use an else, and in doing so we can call basename on it to print the Name with 
+      # any leading directory components removed. [4] [11]
       BASE=$(basename $file)
+      # Now we check if the file with path Destination/basename_of_file already exists as if the file already exists then when calling ln -s,
+      # there will be an error. Now if it doesn't exist we can create a symbolic link using ln -s <Source> <Link>. [4] [12]
       if [[ ! -f "${DES}/${BASE}" ]]; then
       	ln -s $file "${DES}/${BASE}"
       	echo "${DES}/${BASE} -> $file Created"
       else
-	echo "${DES}/${BASE} already exists"
+	      echo "${DES}/${BASE} already exists"
       fi
     fi
   done
 }
 
+# Call the make_directory function on the file path of /home/<user>/bin. [2] [7]
 make_directory /home/$1/bin
 
+# Call the make_directory function on the file path of /home/<user>/.config. [2] [7]
 make_directory /home/$1/.config
 
 echo "
 Symbolic links for /home/$1/bin:"
+# Call the recursive_sym_link function on the original directory: /home/<user>/project1/startup/bin to the destination: /home/<user>/bin
+# so that sym links can be created from /home/user/bin/sayhi -> /home/user/project1/startup/bin/sayhi and  
+# /home/user/bin/install-fonts -> /home/user/project1/startup/bin/install-fonts [7]
 recursive_sym_link $startup/bin /home/$1/bin
 
 echo "
 Symbolic links for /home/$1/.config:"
+# Call the recursive_sym_link function on the original directory: /home/<user>/project1/startup/config to the destination: 
+# /home/<user>/.config
+# so that sym links can be created from /home/user/.config/kakrc -> /home/user/project1/startup/config/kak/kakrc and  
+# /home/user/.config/tmux.conf -> /home/user/project1/startup/config/tmux/tmux.conf [7]
 recursive_sym_link $startup/config /home/$1/.config
 
+# This doesn't call the function as it is the other way around from /home/user/project1/startup/home/bashrc -> /home/user/.bashrc and the 
+# contents of the .bashrc need to removed and replaced by the git cloned bashrc contents.
 echo "
 Symbolc link for /home/$1/.bashrc:"
+# We first check if the sym link doesn't exist using -L as it will cause errors if the sym link for /home/user/.bashrc already exists. [13]
 if [[ ! -L $startup/home/bashrc ]]; then
+   # We first remove the .bashrc file using rm. [6]
    rm /home/$1/.bashrc
+   # Now we use cp to copy the file contents from /home/user/project1/startup/home/bashrc to /home/user/.bashrc. [14]
    cp $startup/home/bashrc /home/$1/.bashrc
+   # Then we remove the /home/user/project1/startup/home/bashrc so we can proceed to make a symbolic link later with it. [6] 
    rm $startup/home/bashrc
+   # Now we can make a symbolic link from home/user/project1/startup/home/bashrc -> /home/user/.bashrc using ln -s again. [12] 
    ln -s /home/$1/.bashrc $startup/home/bashrc
    echo "$startup/home/bashrc -> /home/$1/.bashrc Created"
 else
    echo "$startup/home/bashrc is already a Symbolic Link"
 fi
+
+# References:
+# [3] https://git-scm.com/docs/git-clone
+# [4] https://ss64.com/bash/if.html
+# [5] https://man7.org/linux/man-pages/man1/mv.1.html
+# [6] https://linuxcommand.org/lc3_man_pages/rm1.html
+# [7] https://linuxize.com/post/bash-functions/
+# [8] https://man7.org/linux/man-pages/man1/mkdir.1.html
+# [9] https://stackoverflow.com/questions/4638874/how-to-loop-through-a-directory-recursively-to-delete-files-with-certain-extensi
+# [10] https://tldp.org/LDP/abs/html/localvar.html
+# [11] https://linux.die.net/man/1/basename
+# [12] https://www.unix.com/man-page/hpux/1/ln/
+# [13] https://stackoverflow.com/questions/5767062/how-to-check-if-a-symlink-exists
+# [14] https://man7.org/linux/man-pages/man1/cp.1.html

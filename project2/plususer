@@ -90,3 +90,22 @@ done
 cat >> /etc/passwd <<- EOF
 $user:*:$uid:$uid::$home:$shell
 EOF
+
+cat >> /etc/group <<- EOF
+$user:x:$gid:
+EOF
+
+mkdir $home
+
+shopt -s dotglob
+for file in /etc/skel/*; do
+   base=$(basename $file)
+   cp -r $file "${home}/${base}"
+done
+shopt -u dotglob
+
+chown -R $user:$user $home
+chmod -R go=u, go-w $home
+chmod go= $home
+
+passwd $user

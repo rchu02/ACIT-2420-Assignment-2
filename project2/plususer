@@ -1,27 +1,56 @@
 #!/bin/bash
 
+while getopts ":h" opt; do
+   case "${opt}" in
+      h)
+	echo "For creating a user, use this script, as ./plususer <username>. This will create a user and group with the following username, if no options are given, a default home directory and shell will be made. The default home directory is /home/<username> and default shell is /bin/bash.
+The following options are:
+	-s <shell>: Will create a shell for user.
+	-d <home>: Will create a home directory for user.
+	-g <groups>: Will put users in given groups.
+	-h: Help page."
+	exit 0
+	;;
+      ?)
+	echo "Please use -h: For help"
+        exit 1
+        ;;
+    esac
+done
+
 user=$1
 shell=/bin/bash
 home=/home/$user
 
 shift
 
-while getopts ":s:g:" opt; do
+while getopts ":s:d:g:h" opt; do
    case "${opt}" in
       s)
         shell=${OPTARG}
-        echo $shell
-        ;;
+	;;
+      d)
+	home=${OPTARG}
+	;;
       g)
         groups=${OPTARG}
         echo $groups
         ;;
+      h)
+        echo "For creating a user, use this script, as ./plususer <username>. This will create a user and group with the following username, if no options are given, a default home directory and shell will be made. The default home directory is /home/<username> and default shell is /bin/bash.
+The following options are:
+	-s <shell>: Will create a shell for user.
+	-d <home>: Will create a home directory for user.
+	-g <groups>: Will put users in given groups.
+	-h: Help page."
+	exit 0
+	;;
       :)
         echo "Error: -${OPTARG} requires an argument"
         exit 1
         ;;
       ?)
-        echo "Please use the options of -s: For the specified shell, -h: For the home directory of the user, -c: Copying the /etc/skel directory into the home directory, -g: Additional groups that the user wants to be added to."
+        echo "Please use the options of -s: For the specified shell, -d: For the home directory of the user, -g: Additional groups that the user wants to be added to. -h: For help"
         exit 1
         ;;
     esac

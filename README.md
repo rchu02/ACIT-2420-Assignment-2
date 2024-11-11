@@ -31,6 +31,7 @@ and
 ```
 sudo chmod -R +x project2
 ```
+You are now done setting up!
 
 ## Project 1
 
@@ -54,18 +55,22 @@ To run this part, run the command:
 ```
 ./setup -c
 ```
-and everything will be setup properly. There will be a `startup` directory that contains files for starting a new system. In addition there will be symbolic links from the `~/bin` files ->  `/project1/startup/bin` files, `~/.config` files ->  `/project1/startup/config` files, and `/project1/startup/home/bashrc` -> `~/.bashrc`. You can confirm this by running 
+and everything will be setup properly. There will be a `startup` directory created that contains files for starting a new system. In addition there will be symbolic links:
+- From the `~/bin` files ->  `/project1/startup/bin` files 
+- From `~/.config` files ->  `/project1/startup/config` files 
+- From `/project1/startup/home/bashrc` -> `~/.bashrc` 
+
+For the `~/bin` directory, you can confirm this by running 
 ```
 ls -la ~/bin
 ```
-For the `~/bin` directory, 
+ For the `~/.config` directory, you can confirm this by running
 ```
 ls -la ~/.config
 ```
-For the `~/.config` directory, and 
+For the `~/project1/startup/home/bashrc` directory, you can confirm this by running
 ```
 ls -la project1/startup/home/bashrc 
 ```
-For the `~/project1/startup/home/bashrc` file.
 
 ## Project 2

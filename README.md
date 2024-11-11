@@ -72,5 +72,70 @@ For the `~/project1/startup/home/bashrc` directory, you can confirm this by runn
 ```
 ls -la project1/startup/home/bashrc 
 ```
+You can also run both of the options together like 
+```
+sudo ./setup -pc
+```
 
 ## Project 2
+This part will allow you to add a new user to the system.
+
+To run the script with default settings, run 
+```
+sudo ./plususer <username> 
+```
+Where the `<username>` is what you want to name your user.
+
+The default settings are as follows:
+- Home Directory: `/home/<username>`
+- Shell: `/bin/bash`
+- GECOS: Empty
+- Groups: User will not be added to any groups
+
+If you wish to customize any of these options, please have a look at all the options. 
+
+When creating a new user, the script will create the home directory and all the `/etc/skel` files inside of the home directory. In addition it will also set all the permissions to their default perms. Lastly, it will ask for a password for the user.
+
+### Options
+- `-s <shell>`: If you want to make a custom shell for your new user. Example for custom shell for `/usr/bin/bash`:
+```
+sudo ./plususer user1 -s /usr/bin/bash
+```
+- `-d <home directory>`: If you want to make a custom home directory for your new user. Example for custom home directory for `/home/notuser1`
+```
+sudo ./plususer user1 -d /home/notuser1
+```
+- `-c "<comment>"`: If you want to add GECOS or the real name inside the new user's information. Example for comment for `"Arch lover"`
+```
+sudo ./plususer user1 -c "Arch lover"
+```
+- `-g "<groups>"`: If you want to add the new user in some groups. Put the groups in quotations and separate each group with a space. Will let the user know if one of the groups doesn't exists. Example for groups for `"arch root nobody"`
+```
+sudo ./plususer user1 -g "arch root nobody"
+```
+- `-h`: For further information and help use this command with or without a user. Either
+```
+sudo ./plususer user1 -h
+```
+or
+```
+./plususer -h
+```
+- Finally, you can also run any of the options at the same time like this:
+```
+sudo ./plususer user1 -s /usr/bin/bash -d /home/notuser1 -c "Arch lover" -g "arch root nobody"
+```
+or 
+```
+sudo ./plususer user1 -g "arch root nobody" -d /home/notuser1
+```
+### Confirmation
+To confirm if your script ran, you can check the information on users and groups. Run
+```
+grep -iw <username> /etc/passwd
+```
+to see information on your new user and 
+```
+grep -i <username> /etc/group
+```
+to see information on the groups that the user is in.

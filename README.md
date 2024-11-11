@@ -138,4 +138,8 @@ to see information on your new user and
 ```
 grep -i <username> /etc/group
 ```
-to see information on the groups that the user is in.
+to see information on the groups that the user is in. Then you can also run 
+```
+sudo ls -la /home/<username>
+```
+to see if the home directory exits, if all the permissions are correct and if all the files from `/etc/skel` are there.

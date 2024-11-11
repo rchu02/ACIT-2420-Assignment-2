@@ -142,4 +142,8 @@ to see information on the groups that the user is in. Then you can also run
 ```
 sudo ls -la /home/<username>
 ```
-to see if the home directory exits, if all the permissions are correct and if all the files from `/etc/skel` are there.
+to see if the home directory exits, if all the permissions are correct and if all the files from `/etc/skel` are there. Or you can switch to the user with the password using 
+```
+su <username>
+```
+then check from there instead.

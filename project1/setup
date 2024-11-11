@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# First we set the variable og_user as the original user that ran sudo, as the the use of downloading packages with pacman requires using
-# sudo. [15] It implements awk and the who am i command. The who am i will check who is logged on and the am i will check is an alias for -m
+# First we set the variable og_user as the original user that ran sudo, as the the user for downloading the packages with pacman requires using
+# sudo. [15] It implements awk and the who am i command. The "who am i" will check who is logged on and the "am i" is an alias for -m
 # which is an option for finding only the hostname and user associated with the original input (stdin). [16] The awk with the pipe command of
-# | [18] will take the who am i output and only take the first column with {print $1} mainly the original user that entered sudo. [3] [17]
+# | [18] will take the "who am i" output and only take the first column with {print $1} which is the original user that entered sudo. [3] [17]
 og_user=$(who am i | awk '{print $1}')
 # We now use getopts to check for user options, it will mainly cover -p and -c only with no OPTARG as these will mainly just call the 
 # scripts. [19]
@@ -30,7 +30,7 @@ $(cat /home/$og_user/project1/packages.txt)
       if [[ $input == "y" || $input == "Y" ]]; then
         ./install $og_user
       else
-        # If the input isn't y or Y then we let the user know and exits the script. [22]
+        # If the input isn't y or Y then we let the user know and exit the script. [22]
         echo "
 Open the packages.txt file and add any other packages that you wish to download"
         exit 1

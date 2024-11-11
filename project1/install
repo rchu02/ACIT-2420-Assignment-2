@@ -1,9 +1,12 @@
 #!/bin/bash
 
-# Set the packages variable with the packages.txt data, mainly the packages that need to be installed, using the command cat [1], which prints the entire file out, with the path of /home/$1/... $1 in th# is case will be what the first input of when calling the script (will be the user) [2]. All of this is wrapped around a $() which is a command subsitution which allows bash the output to replace the 
-# command itself. [2]
+# Set the packages variable with the packages.txt data, mainly the packages that need to be installed, using the command cat. [1] 
+# cat prints the entire file out, with the path of /home/$1/... $1 which in this case will be what the first input of when calling 
+# the script (will be the user). [2] All of this is wrapped around a $() which is a command subsitution which allows bash to get the
+# output to replace the command itself. [2]
 packages=$(cat /home/$1/project1/packages.txt)
-# Will call pacman which is the package manager for Arch with the option -S which is to Sync. Then it calls the packages variable with the $packages. [4]
+# Will call pacman which is the package manager for Arch with the option -S which is to Sync. 
+# Then it calls the packages variable with the $packages. [4]
 pacman -S $packages
 
 # References:

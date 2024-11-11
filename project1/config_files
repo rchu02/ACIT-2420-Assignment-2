@@ -6,7 +6,7 @@ git clone https://gitlab.com/cit2420/2420-as2-starting-files.git
 # Set the startup variable as a more readable path instead of 2420-as2-starting file. [2] [3]
 startup=/home/$1/project1/startup
 
-# Change name using mv to make it easier to read
+# Change name using mv to make it easier to read.
 # First it checks if the the git clone directory is a directory using -d in a if statement. [4]
 if [[ -d "/home/$1/project1/2420-as2-starting-files" ]]; then
   # If the path is a directory then we start by moving the contents using mv [5] to the more readable directory path.
@@ -25,7 +25,7 @@ make_directory() {
   fi
 }
 
-# Make symbolic link function where the symbolic link is made to each individual file inside the given directroy. 
+# Make a symbolic link function where the symbolic link is made to each individual file inside the given directroy ($1) to the destination ($2). 
 # If it is a directory inside, it recursively checks inside of it by calling the same function again. [7] [9]
 recursive_sym_link () {
   # Set the local variables as DIR and DES for convenince. [2] [10]
@@ -34,15 +34,17 @@ recursive_sym_link () {
 
   # Use a for loop so that it goes through every file/directory in the directory that was given from the function. [9]
   for file in $DIR/*; do
-    # Now we check if the given file/directory is a directory and we use recursion to call recursive_sym_link again if it is a directory. [4]     # [9]
+    # Now we check if the given file/directory is a directory and we use recursion to call recursive_sym_link again if it is
+    # a directory. [4] [9]
     if [[ -d $file ]]; then
       recursive_sym_link $file $DES
     else
-      # The only other case is if it is a file so we can just use an else, and in doing so we can call basename on it to print the Name with 
-      # any leading directory components removed. [4] [11]
+      # The only other case is if it is a file so we can just use an else, and in doing so we can call basename on it to print the 
+      # name with any leading directory components removed. [4] [11]
       BASE=$(basename $file)
-      # Now we check if the file with path Destination/basename_of_file already exists as if the file already exists then when calling ln -s,
-      # there will be an error. Now if it doesn't exist we can create a symbolic link using ln -s <Source> <Link>. [4] [12]
+      # Now we check if the file with path Destination/basename_of_file already exists because if the file already exists then 
+      # when calling ln -s, there will be an error. Now if it doesn't exist we can create a symbolic link using 
+      # ln -s <Source> <Link>. [4] [12]
       if [[ ! -f "${DES}/${BASE}" ]]; then
       	ln -s $file "${DES}/${BASE}"
       	echo "${DES}/${BASE} -> $file Created"
@@ -74,8 +76,8 @@ Symbolic links for /home/$1/.config:"
 # /home/user/.config/tmux.conf -> /home/user/project1/startup/config/tmux/tmux.conf [7]
 recursive_sym_link $startup/config /home/$1/.config
 
-# This doesn't call the function as it is the other way around from /home/user/project1/startup/home/bashrc -> /home/user/.bashrc and the 
-# contents of the .bashrc need to removed and replaced by the git cloned bashrc contents.
+# This doesn't call the function as it is the other way around from /home/user/project1/startup/home/bashrc -> /home/user/.bashrc 
+# and the contents of the .bashrc need to removed and replaced by the git cloned bashrc contents.
 echo "
 Symbolc link for /home/$1/.bashrc:"
 # We first check if the sym link doesn't exist using -L as it will cause errors if the sym link for /home/user/.bashrc already exists. [13]

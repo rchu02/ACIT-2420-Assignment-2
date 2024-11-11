@@ -24,7 +24,7 @@ The following options are:
     esac
 done
 
- # This will first check if the user is running in sudo, this is by getting the id of the user with the command $(id -u) [20],
+ # This will first check if the user is running in sudo, this is by getting the id of the user with the command $(id -u) [3],
  # and then checking if it is not equal to 0 with -ne, since root has UID = 0. We will need sudo as we will configure the files of 
  # /etc/passwd and /etc/group [3]
 if [[ $(id -u ) -ne 0 ]]; then
@@ -95,13 +95,13 @@ The following options are:
 done
 
 # This sets the variable user_match so that we can find the username in the /etc/passwd which contains information on all users. This utilizes
-# the command substitution first of $(), then calls grep with the -w option which is to only find the word ($user) in this case the username 
+# the command substitution first, $(), then calls grep with the -w option which is to only find the word ($user) in this case the username 
 # that the user inputted in and finds it inside /etc/passwd. [6] [7] [8]
 user_match=$(grep -w $user /etc/passwd)
 
 # This will first check if the user_match variable actually outputted something, i.e it found a match which means that the username is already
-# taken, by using ! which is the not operator followed by -z which checks if a string is empty. [9] Then it lets the user know that the 
-# username is already taken is exited out by exit 1. [2]
+# taken, by using ! which is the not operator followed by -z which checks if a string is empty (non-empty string). [9] 
+# If true, then it lets the user know that the username is already taken is exited out by exit 1. [2]
 if [[ ! -z $user_match ]]; then
   echo "Username is already taken, please choose a different name"
   exit 1
@@ -116,9 +116,9 @@ cont=true
 # This will run a while loop so that the uid will always increment by 1 when it sees that the uid has been taken or not. If there are no
 # matches then the cont variable will be set to false and the loop will end. [11]
 while $cont; do
-  # We will first try to find a match by using grep with -w which is the option for finding the word only inside the /etc/passwd file. [6] [7]
-  # [8] The actual regex expression uses the ^ which is the start of the line and the ${uid} which will be the current number in the
-  # iteration. [12] This will be set in a variable called match.
+  # We will first try to find a match by using grep with -w which is the option for finding the word only at the start of each line 
+  # inside the /etc/passwd file. [6] [7] [8] The actual regex expression uses the ^ which is the start of the line and the ${uid} 
+  # which will be the current number in the iteration. [12] This will be set in a variable called match.
   match=$(grep -w "^${uid}" /etc/passwd)
   # Now we will check if the match variable actually found something or not by using -z which is to check if the string is empty. [9]
   # In addition we have to check if the uid is also not equal to 65534 which is the nobody user id with using -ne. [9]
@@ -135,7 +135,7 @@ done
 cont=true
 
 # This part is similar to the checking of uid, just with gid instead. 
-# This will run a while loop so that the gid will always increment by 1 when it sees that the gid has been taken or not. If there are no
+# Runs a while loop so that the gid will always increment by 1 when it sees that the gid has been taken or not. If there are no
 # matches then the cont variable will be set to false and the loop will end. [11]
 while $cont; do
   # We will first try to find a match by using grep with -w which is the option for finding the word only inside the /etc/group file. [6] [7]
@@ -159,8 +159,8 @@ done
 
 # This will append the contents from EOF to the end of the file in /etc/passwd as a here document. [15]
 # cat will open the /etc/passwd file using the >> and << will append the following contents inside of the EOF inside the /etc/passwd file.
-# It starts with $user which is the username and we will set the password as * for now as we will configure it later so that it will turn x 
-# after. [15] Then the $uid which is the unique uid and gid that are greater than 1000, then the optional GECOS part the user wanted or not, 
+# It starts with $user which is the username and we will set the password as * (cannot login) for now as we will configure it later so that it will 
+# turn x (encrypted password) after. [15] Then the $uid which is the unique uid and gid that are greater than 1000, then the optional GECOS part the user wanted or not, 
 # the $home variable which is the user's home directory and the $shell variable which is the user's shell. These are all separated by 
 # colons. [8]
 cat >> /etc/passwd <<- EOF
@@ -170,7 +170,7 @@ EOF
 # This part is similar to the uid part of appending the contents but instead will be in gid or the /etc/group file. 
 # This will append the contents from EOF to the end of the file in /etc/group as a here document. [15]
 # cat will open the /etc/group file using the >> and << will append the following contents inside of the EOF inside the /etc/group file.
-# It starts with the group name which will always be the username stored in $user, then the password which will be set as x for now and 
+# It starts with the group name which will always be the username stored in $user, then the password which will be set as x and 
 # finally the $gid which is the unique gid greater than 1000. [16]
 cat >> /etc/group <<- EOF
 $user:x:$gid:
@@ -195,7 +195,7 @@ done
 shopt -u dotglob
 
 # This part will change the ownership into its default permissions. [14]
-# It will first use chown to change ownership to the user and the group (which in this case is the user) with $user. : will indicate the group
+# It will first use chown to change ownership to the new user and the group (which in this case is the new user) with $user. : will indicate the group
 # and we use -R which will recursively (with sym links) change the ownership in the files of the home directory. [23]
 chown -R $user:$user $home
 # Now we need to change the permissions so that the files will be as rwxr-xr-x so we set the group and others permissions to be the same as 
@@ -211,15 +211,15 @@ if [[ ! -z $groups ]]; then
   # If the user wants to add the user into the list of groups, then we do a for loop to get all the groups inside the $groups variable.
   for g in $groups; do
     # Now we set the column variable to be the group we find inside the /etc/group using grep and -n which are options to find the word only
-    # and to add the column number. The regex part is so that we can find the group name at the start with ^. [6] [7] [8] [12]
+    # and to add the column number. The regex part is so that we can find the group name at the start of a line with ^. [6] [7] [8] [12]
     column=$(grep -nw "^${g}" /etc/group)
-    # This will only take the column number by setting the %% to be the longest match of the up until the :* where * can be anything of 
-    # the column variable. [25]
+    # This will only take the column number by setting the %% to be the longest match of the line up until the :* where * can be anything of 
+    # the column variable. [25] For example column would be 155:Hello:..., 155 would only be taken as that is the longest string until the first :.
     c_no=${column%%:*}
     # Now we will check if the c_no exists i.e, if the group exists by using ! -z again. [9]
     if [[ ! -z $c_no ]]; then 
       # Now we need to get the line with the specified group so that we can add the user at the end, in addition this will check if there are
-      # other users already in the group so we have to add a , before adding the specified user.
+      # other users are already in the group so we would have to add a , before adding the specified user.
       # We first set group_line to be the line of the group (this is not the same as column as that has the number at the end as well)
       # using grep and the ^${g}: expression in the /etc/group file. [6] [7] [8] [12] This will find the groupname with a : only at the
       # start of the line (^).
@@ -228,11 +228,11 @@ if [[ ! -z $groups ]]; then
       # anything and the ":" would siginify at the end.
 	    if [[ "${group_line}" == *":" ]]; then
          # If there are no users appended at the end, we use sed -i.bak to append the given expression of ${user} at the end of the line 
-         # ${c_no}. [26] The /s is substitute and $ will match the last line. [27]
-    	    sed -i.bak "${c_no}s/$/${user}/" /etc/group
+         # ${c_no}. [26] The -i option is so that it edits the files in place. The /s is substitute and $ will match the last line. [27]
+    	    sed -i "${c_no}s/$/${user}/" /etc/group
     	else 
           # This is similar to the above except it adds a , when there are existing users in the group. [26]
-	        sed -i.bak "${c_no}s/$/,${user}/" /etc/group
+	        sed -i "${c_no}s/$/,${user}/" /etc/group
 	    fi
 	    echo "User was added to group $g"
     else

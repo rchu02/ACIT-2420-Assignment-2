@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# We will first utilize getopts so that when calling ./plususer -h it will show all the options that are available and how to use the script 
+# itself. [1]
 while getopts ":h" opt; do
    case "${opt}" in
       h)
@@ -9,44 +11,63 @@ The following options are:
 	-d <home>: Will create a home directory for user.
 	-g "<groups>": Will put users in given groups, put the groups in "" separated by a space, 
 	e.g, -g "g1 g2 g3".
-	-c "<comment>": Will add the users comment or description for the user.
-	-h: Help page.'
-	exit 0
-	;;
+	-c "<Name or GECOS>": Will add the GECOS or real name as information for the user.
+  -h: Help page.'
+        # Will exit gracefully after calling -h with exit 0. [2]
+	      exit 0
+	      ;;
       ?)
-	echo "Please use -h: For help"
+	      echo "Please use -h: For help"
+        # Will exit with general error with exit 1, if user called the script with any other character or no input. [2]
         exit 1
         ;;
     esac
 done
 
+ # This will first check if the user is running in sudo, this is by getting the id of the user with the command $(id -u) [20],
+ # and then checking if it is not equal to 0 with -ne, since root has UID = 0. We will need sudo as we will configure the files of 
+ # /etc/passwd and /etc/group [3]
 if [[ $(id -u ) -ne 0 ]]; then
    echo "Run as Sudo User"
+   # If the user is not running as root, then a message will tell them to run as it and use exit 1 so that the script can leave
+   # as a general error. [2]
    exit 1
 fi
 
+# We will set the variables of user to be the first input that is taken from calling the script, mainly the username that the user wants to
+# add. [4] The shell will be defaulted to be /bin/bash and the home will be defaulted as /home/username. We will also add a groups and comment
+# variables that are set as "" first since we don't know if the user wants to add the GECOS part or add the user into certain groups.
 user=$1
 shell=/bin/bash
 home=/home/$user
 groups=""
-comment=""
+comment="" 
 
+# This will shift the argument to the left by 1, so we can get the options of the user. [5]
 shift
 
+# This will handle all options that are inputted from the user. The : at the beginning is to handle any errors if the OPTARG does not exist.
+# The other : after each option stores the OPTARG variable. [1]
 while getopts ":s:d:g:c:h" opt; do
    case "${opt}" in
+      # Option -s will set the shell variable to what the user wants the shell to be instead of the default using OPTARG. [1]
       s)
         shell=${OPTARG}
-	;;
+	      ;;
+      # Option -d will set the home variable to what the user wants the home directory to be instead of the default using OPTARG. [1]
       d)
-	home=${OPTARG}
-	;;
+	      home=${OPTARG}
+	      ;;
+      # Option -c will set the comment variable to what the user wants the GECOS part of the user description instead of nothing using OPTARG.
+      # [1]
       c)
-	comment=${OPTARG}
-	;;
+	      comment=${OPTARG}
+	      ;;
+      # Option -g will set the groups variable to what groups the user wants to put the username into instead of no groups, using OPTARG. [1]
       g)
         groups=${OPTARG}
-	;;
+	      ;;
+      # Option -h with no arguments is for the help page again with exit 0. [1] [2]
       h)
         echo 'For creating a user, use this script, as ./plususer <username>. This will create a user and group with the following username, if no options are given, a default home directory and shell will be made. The default home directory is /home/<username> and default shell is /bin/bash.
 The following options are:
@@ -54,14 +75,18 @@ The following options are:
 	-d <home>: Will create a home directory for user.
 	-g "<groups>": Will put users in given groups, put the groups in "" separated by a space, 
 	e.g, -g "g1 g2 g3".
-	-c "<comment>": Will add the users comment or description for the user.
+	-c "<Name or GECOS>": Will add the GECOS or real name as information for the user.
 	-h: Help page.'
 	exit 0
-	;;
+	      ;;
+      # This is for the error handling part that lets the user know that they have to input something for the options, except -h, using exit 
+      # 1, to exit with an error. [1] [2]
       :)
         echo "Error: -${OPTARG} requires an argument"
         exit 1
         ;;
+      # This is for when the user inputs an invalid option, where the ? can be anything but the other cases used, where it lets the user know
+      # to run what options are available instead, then exits with an error with exit 1. [1] [2]
       ?)
         echo "Please use the options of -s: For the specified shell, -d: For the home directory of the user, -g: Additional groups that the user wants to be added to. -h: For help"
         exit 1
@@ -69,74 +94,182 @@ The following options are:
     esac
 done
 
-user_match=$(cat /etc/passwd | grep -w $user)
+# This sets the variable user_match so that we can find the username in the /etc/passwd which contains information on all users. This utilizes
+# the command substitution first of $(), then calls grep with the -w option which is to only find the word ($user) in this case the username 
+# that the user inputted in and finds it inside /etc/passwd. [6] [7] [8]
+user_match=$(grep -w $user /etc/passwd)
 
+# This will first check if the user_match variable actually outputted something, i.e it found a match which means that the username is already
+# taken, by using ! which is the not operator followed by -z which checks if a string is empty. [9] Then it lets the user know that the 
+# username is already taken is exited out by exit 1. [2]
 if [[ ! -z $user_match ]]; then
   echo "Username is already taken, please choose a different name"
   exit 1
 fi
 
+# This will set the uid and gid to be both 1001 as this is the next number after the uid and gid of the original user (1000). [10] We will 
+# also set the cont variable as true so we can use a while loop to check if the uid exists in the following part.
 uid=1001
 gid=1001
 cont=true
 
+# This will run a while loop so that the uid will always increment by 1 when it sees that the uid has been taken or not. If there are no
+# matches then the cont variable will be set to false and the loop will end. [11]
 while $cont; do
+  # We will first try to find a match by using grep with -w which is the option for finding the word only inside the /etc/passwd file. [6] [7]
+  # [8] The actual regex expression uses the ^ which is the start of the line and the ${uid} which will be the current number in the
+  # iteration. [12] This will be set in a variable called match.
   match=$(grep -w "^${uid}" /etc/passwd)
+  # Now we will check if the match variable actually found something or not by using -z which is to check if the string is empty. [9]
+  # In addition we have to check if the uid is also not equal to 65534 which is the nobody user id with using -ne. [9]
   if [[ -z $match && $uid -ne 65534 ]]; then
+    # Once it finds no match and isn't the nobody user id, it sets cont=false which will end the while loop and have a unique uid.
      cont=false
   else
+    # This will increment the uid by 1 if there is a match. [13]
      ((uid++))
   fi
 done
 
+# This resets the cont variable to true so that it can run for the gid part.
 cont=true
 
+# This part is similar to the checking of uid, just with gid instead. 
+# This will run a while loop so that the gid will always increment by 1 when it sees that the gid has been taken or not. If there are no
+# matches then the cont variable will be set to false and the loop will end. [11]
 while $cont; do
+  # We will first try to find a match by using grep with -w which is the option for finding the word only inside the /etc/group file. [6] [7]
+  # [8] The actual regex expression uses the ^ which is the start of the line and the ${gid} which will be the current number in the
+  # iteration. [12] This will be set in a variable called match.
   match=$(grep -w $gid /etc/group)
+  # Now we will check if the match variable actually found something or not by using -z which is to check if the string is empty. [9]
+  # In addition we have to check if the gid is also not equal to 65534 which is the nobody group id with using -ne. [9]
   if [[ -z $match && $gid -ne 65534 ]]; then
+     # Once it finds no match and isn't the nobody group id, it sets cont=false which will end the while loop and have a unique gid.
      cont=false
   else
+     # This will increment the gid by 1 if there is a match. [13]
      ((gid++))
   fi
 done
 
+# The next few parts are to add the user in the /etc/passwd and group in the /etc/group files. Afterwards we will have to create the home 
+# directory for the created user and then add the /etc/skel files inside the home directory. Lastly we will set the permissions to the correct
+# default permissions when creating a user. [14]
+
+# This will append the contents from EOF to the end of the file in /etc/passwd as a here document. [15]
+# cat will open the /etc/passwd file using the >> and << will append the following contents inside of the EOF inside the /etc/passwd file.
+# It starts with $user which is the username and we will set the password as * for now as we will configure it later so that it will turn x 
+# after. [15] Then the $uid which is the unique uid and gid that are greater than 1000, then the optional GECOS part the user wanted or not, 
+# the $home variable which is the user's home directory and the $shell variable which is the user's shell. These are all separated by 
+# colons. [8]
 cat >> /etc/passwd <<- EOF
 $user:*:$uid:$uid:$comment:$home:$shell
 EOF
 
+# This part is similar to the uid part of appending the contents but instead will be in gid or the /etc/group file. 
+# This will append the contents from EOF to the end of the file in /etc/group as a here document. [15]
+# cat will open the /etc/group file using the >> and << will append the following contents inside of the EOF inside the /etc/group file.
+# It starts with the group name which will always be the username stored in $user, then the password which will be set as x for now and 
+# finally the $gid which is the unique gid greater than 1000. [16]
 cat >> /etc/group <<- EOF
 $user:x:$gid:
 EOF
 
+# This wil make the home directory that is stored in $home. [17]
 mkdir $home
 
+# This part will loop through all the files inside the /etc/skel directory and put all of them in the home directory of the user.
+# It first implements shopt -s dotglob which is a way to include files that are hidden. [18] shopt is a shell option and -s will enable the 
+# dotglob which allows bash to include files that are hidden (starts with .). [19]
 shopt -s dotglob
+# We loop through the files in the /etc/skel/*, in this case * will indicate all the files inside that directory. [20]
 for file in /etc/skel/*; do
+   # basename will strip the leading directory components of the file. We want to do this so we only want files like .bashrc instead of 
+   # /etc/skel/.bashrc to be copied into the home directory. [21]
    base=$(basename $file)
+   # cp will copy the files from $file which are the files inside /etc/skel and put them in the home directory with the name as the base. [22]
    cp -r $file "${home}/${base}"
 done
+# This will end the dotglob with the option of -u. [19]
 shopt -u dotglob
 
+# This part will change the ownership into its default permissions. [14]
+# It will first use chown to change ownership to the user and the group (which in this case is the user) with $user. : will indicate the group
+# and we use -R which will recursively (with sym links) change the ownership in the files of the home directory. [23]
 chown -R $user:$user $home
+# Now we need to change the permissions so that the files will be as rwxr-xr-x so we set the group and others permissions to be the same as 
+# user (which is everything), then we remove the permissions for writing for them. This is also done recursively with sym links. [24]
 chmod -R go=u,go-w $home
+# Lastly, we will remove all the permissions for the group and others in the home directory so that only the user can use it by setting go=.
+# [24]
 chmod go= $home
 
+# This part will append the user to the given groups that the user inputted in.
+# It will first check if the user added the option of -g by checking if the string of $groups is nonempty using the ! with -z. [9]
 if [[ ! -z $groups ]]; then
+  # If the user wants to add the user into the list of groups, then we do a for loop to get all the groups inside the $groups variable.
   for g in $groups; do
+    # Now we set the column variable to be the group we find inside the /etc/group using grep and -n which are options to find the word only
+    # and to add the column number. The regex part is so that we can find the group name at the start with ^. [6] [7] [8] [12]
     column=$(grep -nw "^${g}" /etc/group)
+    # This will only take the column number by setting the %% to be the longest match of the up until the :* where * can be anything of 
+    # the column variable. [25]
     c_no=${column%%:*}
+    # Now we will check if the c_no exists i.e, if the group exists by using ! -z again. [9]
     if [[ ! -z $c_no ]]; then 
-	    group_line=$(grep "^${g}:" /etc/group)
-	if [[ "${group_line}" == *":" ]]; then
+      # Now we need to get the line with the specified group so that we can add the user at the end, in addition this will check if there are
+      # other users already in the group so we have to add a , before adding the specified user.
+      # We first set group_line to be the line of the group (this is not the same as column as that has the number at the end as well)
+      # using grep and the ^${g}: expression in the /etc/group file. [6] [7] [8] [12] This will find the groupname with a : only at the
+      # start of the line (^).
+      group_line=$(grep "^${g}:" /etc/group)
+      # Now we check if the group_line contains a : at the end of the line which signifies that there are no users in the group. * would mean
+      # anything and the ":" would siginify at the end.
+	    if [[ "${group_line}" == *":" ]]; then
+         # If there are no users appended at the end, we use sed -i.bak to append the given expression of ${user} at the end of the line 
+         # ${c_no}. [26] The /s is substitute and $ will match the last line. [27]
     	    sed -i.bak "${c_no}s/$/${user}/" /etc/group
     	else 
-	    sed -i.bak "${c_no}s/$/,${user}/" /etc/group
-	fi
-	echo "User was added to group $g"
+          # This is similar to the above except it adds a , when there are existing users in the group. [26]
+	        sed -i.bak "${c_no}s/$/,${user}/" /etc/group
+	    fi
+	    echo "User was added to group $g"
     else
-	echo "Group $g was not found"
+	    echo "Group $g was not found"
     fi
   done
 fi
 
+# This will call the passwd command which will ask for a password for the given user. [28]
 passwd $user
+
+# References:
+# [1] https://kodekloud.com/blog/bash-getopts/
+# [2] https://www.unix.com/programming/38357-exit-0-versus-exit-1-a.html
+# [3] https://man7.org/linux/man-pages/man1/id.1.html
+# [4] https://bash.cyberciti.biz/guide/$1
+# [5] https://ss64.com/bash/shift.html
+# [6] https://www.gnu.org/software/bash/manual/html_node/Command-Substitution.html
+# [7] https://man7.org/linux/man-pages/man1/grep.1.html
+# [8] https://www.ibm.com/docs/en/aix/7.1?topic=passwords-using-etcpasswd-file
+# [9] https://devmanual.gentoo.org/tools-reference/bash/index.html
+# [10] https://www.redhat.com/en/blog/user-account-gid-uid
+# [11] https://www.cyberciti.biz/faq/bash-while-loop/
+# [12] https://stackoverflow.com/questions/8327705/what-are-and-in-regular-expressions
+# [13] https://askubuntu.com/questions/385528/how-to-increment-a-variable-in-bash
+# [14] https://tldp.org/LDP/sag/html/adduser.html
+# [15] https://www.scaler.com/topics/linux-append-to-file/
+# [16] https://www.cyberciti.biz/faq/understanding-etcgroup-file/
+# [17] https://man7.org/linux/man-pages/man1/mkdir.1.html
+# [18] https://stackoverflow.com/questions/2135770/bash-for-loop-with-wildcards-and-hidden-files
+# [19] https://ss64.com/bash/shopt.html
+# [20] https://stackoverflow.com/questions/20796200/how-to-loop-over-files-in-directory-and-change-path-and-add-suffix-to-filename
+# [21] https://linux.die.net/man/1/basename
+# [22] https://man7.org/linux/man-pages/man1/cp.1.html
+# [23] https://linux.die.net/man/1/chown
+# [24] https://man7.org/linux/man-pages/man1/chmod.1p.html
+# [25] https://www.gnu.org/software/bash/manual/html_node/Shell-Parameter-Expansion.html
+# [26] https://stackoverflow.com/questions/22159044/how-to-append-a-string-at-end-of-a-specific-line-in-a-file-in-bash
+# [27] https://linux.die.net/man/1/sed
+# [28] https://man7.org/linux/man-pages/man1/passwd.1.html
